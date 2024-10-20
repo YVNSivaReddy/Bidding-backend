@@ -31,3 +31,9 @@ I have shown how Authentication can be achieved using nodejs and mongoDB in my s
 - Run <code>npm install</code> to install all needed dependencies
 - Run <code>nodemon index</code> to spin up the server
 - The server runs on port 3000 <code>http://localhost:3000/</code>
+
+
+<!-- .env -->
+PORT = 8000
+DB_URL = mongodb://127.0.0.1:27017/Bidding
+FRONTEND_URL = http://localhost:8000

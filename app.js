@@ -1,4 +1,5 @@
 const express = require("express");
+const cors = require("cors");  
 const app = express();
 const bodyParser = require("body-parser");
 const bcrypt = require("bcrypt");
@@ -8,28 +9,24 @@ const jwt = require("jsonwebtoken");
 const dbConnect = require("./db/dbConnect");
 const User = require("./db/userModel");
 const auth = require("./auth");
+const auctionRoutes = require("./auctionRoutes");
 
 // execute database connection
 dbConnect();
 
-// Curb Cores Error by adding a header here
-app.use((req, res, next) => {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader(
-    "Access-Control-Allow-Headers",
-    "Origin, X-Requested-With, Content, Accept, Content-Type, Authorization"
-  );
-  res.setHeader(
-    "Access-Control-Allow-Methods",
-    "GET, POST, PUT, DELETE, PATCH, OPTIONS"
-  );
-  next();
-});
+// Use the CORS middleware here
+// app.use(cors({
+//   origin: ['http://localhost:8000','http://localhost:3000'], // Frontend URL (can be adjusted)
+//   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'], // Allowed methods
+//   allowedHeaders: ['Content-Type', 'Authorization'], // Allowed headers
+// }));
+app.use(cors('*'))
 
 // body parser configuration
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
+// routes
 app.get("/", (request, response, next) => {
   response.json({ message: "Hey! This is your server response!" });
   next();
@@ -56,13 +53,15 @@ app.post("/register", (request, response) => {
             message: "User Created Successfully",
             result,
           });
+          // console.log(result,'result')
         })
         // catch erroe if the new user wasn't added successfully to the database
         .catch((error) => {
-          response.status(500).send({
-            message: "Error creating user",
+          response.status(409).send({
+            message: "User already existing please login",
             error,
           });
+          // console.log(error,'error')
         });
     })
     // catch error if the password hash isn't successful
@@ -91,12 +90,9 @@ app.post("/login", (request, response) => {
           // check if password matches
           if(!passwordCheck) {
             return response.status(400).send({
-              message: "Passwords does not match",
-              error,
+              message: "Passwords do not match",
             });
           }
-
-          //   create JWT token
           const token = jwt.sign(
             {
               userId: user._id,
@@ -105,23 +101,19 @@ app.post("/login", (request, response) => {
             "RANDOM-TOKEN",
             { expiresIn: "24h" }
           );
-
-          //   return success response
           response.status(200).send({
             message: "Login Successful",
             email: user.email,
             token,
           });
         })
-        // catch error if password do not match
         .catch((error) => {
           response.status(400).send({
-            message: "Passwords does not match",
+            message: "Passwords do not match",
             error,
           });
         });
     })
-    // catch error if email does not exist
     .catch((e) => {
       response.status(404).send({
         message: "Email not found",
@@ -139,5 +131,8 @@ app.get("/free-endpoint", (request, response) => {
 app.get("/auth-endpoint", auth, (request, response) => {
   response.send({ message: "You are authorized to access me" });
 });
+
+// other configurations...
+app.use("/api", auctionRoutes);
 
 module.exports = app;
